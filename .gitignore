@@ -8,6 +8,7 @@ btracker_sync.log
 # Docker deployment
 docker/blockchain/block_log*
 .env.*
+docker-compose.override.yml
 
 # IDEs
 .vscode/
