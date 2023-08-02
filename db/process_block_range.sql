@@ -1,10 +1,12 @@
-CREATE OR REPLACE FUNCTION btracker_app.process_block_range_data_c(in _from INT, in _to INT, IN _report_step INT = 1000)
+CREATE OR REPLACE FUNCTION btracker_app.process_block_range_data_c(
+    IN _from INT, IN _to INT, IN _report_step INT = 1000
+)
 RETURNS VOID
 LANGUAGE 'plpgsql' VOLATILE
 SET from_collapse_limit = 16
 SET join_collapse_limit = 16
 SET jit = OFF
-SET cursor_tuple_fraction='0.9'
+SET cursor_tuple_fraction = '0.9'
 AS
 $$
 DECLARE
@@ -189,9 +191,7 @@ LOOP
 
 END LOOP;
 END
-$$
-;
-
+$$;
 
 CREATE OR REPLACE FUNCTION btracker_app.process_hardfork_hive_operation(body jsonb)
 RETURNS VOID
@@ -238,5 +238,4 @@ savings AS (
   WHERE account = _account;
 
 END
-$$
-;
+$$;
