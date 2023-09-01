@@ -195,7 +195,7 @@ PERFORM btracker_app.storeLastProcessedBlock(_to);
 END
 $$;
 
-CREATE OR REPLACE FUNCTION btracker_app.process_hardfork_hive_operation(body jsonb)
+CREATE OR REPLACE FUNCTION btracker_app.process_hardfork_hive_operation(body JSONB)
 RETURNS VOID
 LANGUAGE 'plpgsql'
 AS
