@@ -121,16 +121,6 @@ prepare_haf_data:
   tags:
     - public-runner-docker
 
-docker-backend-block-processing-base-build:
-  extends: .docker-base-build-template
-  variables:
-    NAME: "backend-block-processing"
-
-docker-backend-setup-base-build:
-  extends: .docker-base-build-template
-  variables:
-    NAME: "backend-setup"
-
 docker-ci-runner-build:
   extends: .docker-base-build-template
   variables:
@@ -138,35 +128,13 @@ docker-ci-runner-build:
     NAME: "ci-runner"
     TARGET: "ci-runner-ci"
 
-docker-build:
-  extends: .docker_image_builder_job_template
-  stage: build
-  needs:
-   - docker-backend-block-processing-base-build
-   - docker-backend-setup-base-build
-  before_script:
-    - !reference [.docker_image_builder_job_template, before_script]
-    - |
-      echo -e "\e[0Ksection_start:$(date +%s):login[collapsed=true]\r\e[0KLogging to Docker registry..."
-      docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
-      echo -e "\e[0Ksection_end:$(date +%s):login\r\e[0K"
-  script:
-    - |
-      echo -e "\e[0Ksection_start:$(date +%s):tag[collapsed=true]\r\e[0KDetermining tag for the new image..."
-      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
-        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
-        export TAG="latest"
-      else
-        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $CI_COMMIT_REF_SLUG"
-        export TAG="$CI_COMMIT_REF_SLUG"
-      fi
-      echo -e "\e[0Ksection_end:$(date +%s):tag\r\e[0K"
-      echo -e "\e[0Ksection_start:$(date +%s):build[collapsed=true]\r\e[0KBaking backend images..."
-      git config --global --add safe.directory $(pwd)
-      docker buildx bake --progress=plain --provenance=false --push ci
-      echo -e "\e[0Ksection_end:$(date +%s):build\r\e[0K"
-  tags:
-    - public-runner-docker
+docker-psql-client-build:
+  extends: .docker-base-build-template
+  variables:
+    BASE_REPO_NAME: ""
+    BASE_TAG: "22.04"
+    NAME: "psql-client"
+    TARGET: "psql-client"
 
 test:
   extends: .docker_image_builder_job_template
@@ -175,15 +143,13 @@ test:
   needs:
     - prepare_haf_image
     - prepare_haf_data
-    - docker-build
+    - docker-psql-client-build
     - docker-ci-runner-build
   variables:
     HAF_COMMAND: --shared-file-size=1G --plugin database_api --replay --stop-replay-at-block=5000000
     HAF_REGISTRY: registry.gitlab.syncad.com/hive/haf/instance
     HAF_DATA_DIRECTORY: $DATA_CACHE_HAF/datadir
     HAF_SHM_DIRECTORY: $DATA_CACHE_HAF/shm_dir
-    BACKEND_SETUP_VERSION: $CI_COMMIT_SHA
-    BACKEND_BLOCK_PROCESSING_VERSION: $CI_COMMIT_SHA
     PGHERO_USERNAME: unused
     PGHERO_PASSWORD: unused
     POSTGRES_ACCESS: postgresql://haf_admin@docker:5432/haf_block_log

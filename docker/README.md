@@ -16,23 +16,20 @@
 Commands below will start a demo environment consisting of balance tracker and HAF with 5 million blocks.
 
 ```bash
-docker buildx bake # optional, if you want to build balance_tracker images, rather than pull them from the registry 
 curl https://gtg.openhive.network/get/blockchain/block_log.5M -o docker/blockchain/block_log
 cd docker
 docker compose up -d
 ```
 
-You can stop the app with `docker compose stop` or `docker compose down` (the latter removes the containers) and remove all the application data with `docker compose down -v`.
+You can stop the app with `docker compose stop` or `docker compose down` (the latter removes the containers) and remove all application data with `docker compose down -v`.
 
 ## Images
 
 ### Overview
 
-Balancer Tracker consists of three Docker images: backend image for database setup, backend image for block processing, and a PostgREST image for running the API.
+Balancer Tracker consists of two Docker images: psql client for database setup and block processing, and a PostgREST image for running the API.
 
-Backend image for database setup is designed to exit with error code 0 after the setup is successfully completed. Furthermore, it will not do anything if it detects that the database has already been set up - this will be changed once the SQL scripts are verified to work as migrations (that is to say they are proven to execute correctly on a database that already contains Balance Tracker data).
-
-Backend iamge for block processing searches HAF database for unprocessed blocks, processes them and then waits for more blocks to arrive. This image runs continuously. It also has a healthcheck. The healthcheck settings are calibrated so that it doesn't fail when there are 5 million unprocessed blocks in the HAF database. When run in production, however, it will time out during the initial sync and leave the container in an "unhealthy" status until the sync is complete. To avoid this override the default settings while running the image - perhaps increase `start-period` to a couple of days or `retries` to a very large value.
+Psql client image is a simple Ubuntu-based image containing PostgreSQL client. It is designed to run scripts that are bind-mounted inside it. There is no need to rebuild this image unless to change the version of Ubuntu.
 
 No custom PostgREST image is neeed for the API. The application has been tested to run with both official [postgrest/postgrest](https://hub.docker.com/r/postgrest/postgrest) image as well as Debian-based [bitnami/postgrest](https://hub.docker.com/r/bitnami/postgrest) variant. The latter can be used to build a custom image with healthcheck enabled - see the [dev](docker-compose.dev.yml) [Compose override file]((#configuring-containers-by-using-override-files)) for an example on how to do this on the fly.
 
@@ -40,12 +37,8 @@ No custom PostgREST image is neeed for the API. The application has been tested 
 
 There are several targets defined in the Bakefile
 
-- *default* - groups together targets *backend-block-processing* and *backend-setup*
-- *base* - groups together targets *backend-block-processing-base* and *backend-setup-base*
-- *backend-block-processing* - builds backend image for block processing
-- *backend-setup* - builds backend image responsible for database setup
-- *backend-block-processing-base* - builds base image for backend image for block processing
-- *backend-setup-base* - builds base image for backend image responsible for database setup
+- *default* - groups together targets *psql-client*
+- *psql-client* - builds psql client image
 - *ci-runner* - builds CI runner
 
 There are also some other targets meant to be used by CI only: *ci*, *backend-block-processing-ci*, *backend-setup-base-ci*, and *ci-runner-ci*
@@ -82,10 +75,8 @@ The variables below are can be used to configure the Compose files.
 | HAF_REGISTRY                      | Registry containing HAF image                                                                                       | hiveio/haf                                                                          |
 | HAF_VERSION                       | HAF version to use                                                                                                  | v1.27.4.0                                                                           |
 | HAF_COMMAND                       | HAF command to execute                                                                                              | --shared-file-size=1G --plugin database_api --replay --stop-replay-at-block=5000000 |
-| BACKEND_SETUP_REGISTRY            | Registry containing backend setup image                                                                             | registry.gitlab.syncad.com/hive/balance_tracker/backend-setup                       |
-| BACKEND_SETUP_VERSION             | Backend setup version to use                                                                                        | latest                                                                              |
-| BACKEND_BLOCK_PROCESSING_REGISTRY | Registry containing backend block processing image                                                                  | registry.gitlab.syncad.com/hive/balance_tracker/backend-block-processing            |
-| BACKEND_BLOCK_PROCESSING_VERSION  | Backend block processing version to use                                                                             | latest                                                                              |
+| BACKEND_REGISTRY                  | Registry containing psql client image                                                                               | registry.gitlab.syncad.com/hive/balance_tracker/psql-client                         |
+| BACKEND_VERSION                   | Psql client image version to use                                                                                    | 22.04                                                                               |
 | POSTGREST_REGISTRY                | Registry containing PostgREST image                                                                                 | postgrest/postgrest                                                                 |
 | POSTGREST_VERSION                 | PostgREST version to use                                                                                            | latest                                                                              |
 | SWAGGER_REGISTRY                  | Registry containing Swagger UI image (*swagger* profile only)                                                       | swaggerapi/swagger-ui                                                               |

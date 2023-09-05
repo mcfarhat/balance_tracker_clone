@@ -2,16 +2,11 @@
 variable "CI_REGISTRY_IMAGE" {
     default = "registry.gitlab.syncad.com/hive/balance_tracker"
 }
-variable "CI_COMMIT_SHA" {}
-variable "CI_COMMIT_TAG" {}
-variable "TAG" {
-  default = "latest"
-}
 variable "TAG_CI" {
   default = "docker-24.0.1-4"
 }
-variable "BASE_TAG" {
-  default = "ubuntu-22.04-1"
+variable "UBUNTU_VERSION" {
+  default = "22.04"
 }
 
 # Functions
@@ -27,93 +22,20 @@ function "registry-name" {
 
 # Target groups
 group "default" {
-  targets = ["backend-block-processing", "backend-setup"]
-}
-
-group "base" {
-  targets = ["backend-block-processing-base", "backend-setup-base"]
-}
-
-group "ci" {
-  targets = ["backend-block-processing-ci", "backend-setup-ci"]
+  targets = ["psql-client"]
 }
 
 # Targets
-target "backend-block-processing-base" {
-  dockerfile = "Dockerfile.backend-block-processing"
-  target = "base"
+target "psql-client" {
+  dockerfile = "Dockerfile"
   tags = [
-    "${registry-name("backend-block-processing", "base")}:${BASE_TAG}"
+    "${registry-name("psql-client", "")}:${UBUNTU_VERSION}"
   ]
-  platforms = [
-    "linux/amd64"
-  ]
-}
-
-target "backend-block-processing" {
-  dockerfile = "Dockerfile.backend-block-processing"
-  tags = [
-    "${registry-name("backend-block-processing", "")}:${TAG}",
-    notempty(CI_COMMIT_SHA) ? "${registry-name("backend-block-processing", "")}:${CI_COMMIT_SHA}": "",
-    notempty(CI_COMMIT_TAG) ? "${registry-name("backend-block-processing", "")}:${CI_COMMIT_TAG}": ""
-  ]
-  platforms = [
-    "linux/amd64"
-  ]
-}
-
-target "backend-block-processing-ci" {
-  inherits = ["backend-block-processing"]
-  contexts = {
-    base = "docker-image://${registry-name("backend-block-processing", "base")}:${BASE_TAG}"
+  args = {
+    UBUNTU_VERSION = "${UBUNTU_VERSION}"
   }
-  cache-from = [
-    "type=registry,ref=${registry-name("backend-block-processing", "cache")}:${TAG}"
-  ]
-  cache-to = [
-    "type=registry,mode=max,ref=${registry-name("backend-block-processing", "cache")}:${TAG}"
-  ]
-  output = [
-    "type=registry"
-  ]
-}
-
-target "backend-setup-base" {
-  dockerfile = "Dockerfile.backend-setup"
-  target = "base"
-  tags = [
-    "${registry-name("backend-setup", "base")}:${BASE_TAG}"
-  ]
   platforms = [
     "linux/amd64"
-  ]
-}
-
-target "backend-setup" {
-  dockerfile = "Dockerfile.backend-setup"
-  tags = [
-    "${registry-name("backend-setup", "")}:${TAG}",
-    notempty(CI_COMMIT_SHA) ? "${registry-name("backend-setup", "")}:${CI_COMMIT_SHA}": "",
-    notempty(CI_COMMIT_TAG) ? "${registry-name("backend-setup", "")}:${CI_COMMIT_TAG}": ""
-  ]
-  platforms = [
-    "linux/amd64"
-  ]
-}
-
-target "backend-setup-ci" {
-  inherits = ["backend-setup"]
-  contexts = {
-    base = "docker-image://${registry-name("backend-setup", "base")}:${BASE_TAG}"
-  }
-  cache-from = [
-    "type=registry,ref=${registry-name("backend-setup", "cache")}:${TAG}"
-  ]
-  cache-to = [
-    "type=registry,mode=max,ref=${registry-name("backend-setup", "cache")}:${TAG}"
-  ]
-  output = [
-    "type=registry"
   ]
 }
 

@@ -29,21 +29,42 @@ services:
       retries: 3
       start_period: 48h #time for replay to finish
   backend-setup:
-    image: ${BACKEND_SETUP_REGISTRY:-registry.gitlab.syncad.com/hive/balance_tracker/backend-setup}:${BACKEND_SETUP_VERSION:-latest}
+    image: ${BACKEND_REGISTRY:-registry.gitlab.syncad.com/hive/balance_tracker/psql-client}:${BACKEND_VERSION:-22.04}
+    working_dir: /app
+    command: 
+      - "./balance-tracker.sh set-up-database --skip-if-db-exists"
     environment:
       POSTGRES_HOST: haf
+    volumes:
+      - ../api:/app/api
+      - ../db:/app/db
+      - ../scripts:/app/scripts
+      - ../balance-tracker.sh:/app/balance-tracker.sh
     networks:
       haf-network:
     depends_on:
       haf:
         condition: service_healthy
   backend-block-processing:
-    image: ${BACKEND_BLOCK_PROCESSING_REGISTRY:-registry.gitlab.syncad.com/hive/balance_tracker/backend-block-processing}:${BACKEND_BLOCK_PROCESSING_VERSION:-latest}
+    image: ${BACKEND_REGISTRY:-registry.gitlab.syncad.com/hive/balance_tracker/psql-client}:${BACKEND_VERSION:-22.04}
+    working_dir: /app
+    command:
+      - "./balance-tracker.sh process-blocks"
     environment:
+      BLOCK_NUMBER: 0
       POSTGRES_HOST: haf
       POSTGRES_USER: haf_app_admin
+    volumes:
+      - ../balance-tracker.sh:/app/balance-tracker.sh 
+      - ./scripts/block-processing-healthcheck.sh:/app/healthcheck.sh
     networks:
       haf-network:
+    healthcheck:
+      test: ["CMD-SHELL","/app/healthcheck.sh"]
+      interval: 60s
+      timeout: 5s
+      retries: 20
+      start_period: 72h #time for sync to finish
     depends_on:
       backend-setup:
         condition: service_completed_successfully
