@@ -41,17 +41,9 @@ There are several targets defined in the Bakefile
 - *psql-client* - builds psql client image
 - *ci-runner* - builds CI runner
 
-There are also some other targets meant to be used by CI only: *ci*, *backend-block-processing-ci*, *backend-setup-base-ci*, and *ci-runner-ci*
+There are also some other targets meant to be used by CI only: *ci-runner-ci*
 
 To build a given target run `docker buildx bake [target-name]`. If no target name is provided the *default* target will be built.
-
-Note that base images are not used by the *default* and its component targets - they are not necessary as Docekr will cache local builds. Targets to build them locally are provided for testing purposes. The same is true for target *ci-runner*.
-
-It is, however, possible to use prebuilt base images with local builds. For example:
-
-```bash
-docker buildx bake --set backend-setup.contexts.base="docker-image://registry.gitlab.syncad.com/hive/balance_tracker/backend-setup/base:ubuntu-22.04-1" backend-setup
-```
 
 ## Running Balance Tracker with Docker Compose
 
@@ -96,17 +88,20 @@ The variables below are can be used to configure the Compose files.
 You can override them by editing the [.env](.env) file or by creating your own env file and instructing Docker Compose to use it instead of the default, eg.
 
 ```bash
-# Create a .env.local file which overrides registries used to pull HAF and PostgREST images and HAF version
+# Create a .env.local file which overrides registries used to pull HAF and PostgREST images and HAF version as well as HAF command
 {
   echo "HAF_REGISTRY=registry.gitlab.syncad.com/hive/haf/instance"
-  echo "HAF_VERSION=instance-v1.27.4.0"
+  echo "HAF_VERSION=instance-v1.27.5-rc0"
   echo "POSTGREST_REGISTRY=bitnami/postgrest"
   echo "HIVED_UID=0"
+  echo "HAF_COMMAND=--shared-file-size=1G --plugin database_api --replay --stop-replay-at-block=5000000"
 } > .env.local
 
 # Start the containers
 docker compose --env-file .env.local up -d
 ```
+
+If you wish to create your own .env file , you may want to use [.env](.env) as a template to avoid errors.
 
 #### Configuring HAF
 
@@ -158,14 +153,15 @@ curl https://gtg.openhive.network/get/blockchain/block_log.5M -o docker/blockcha
 cd docker
 
 # Create a .env.local file which overrides registries used to pull HAF and PostgREST images
-# and configures the bind mount directories
+# and configures the bind mount directories as well as overides HAF command
 {
   echo "HAF_REGISTRY=registry.gitlab.syncad.com/hive/haf/instance"
-  echo "HAF_VERSION=instance-v1.27.4.0"
+  echo "HAF_VERSION=instance-v1.27.5-rc0"
   echo "POSTGREST_REGISTRY=bitnami/postgrest"
   echo "HIVED_UID=$(id -u)" # Your user id
   echo "HAF_DATA_DIRECTORY=/srv/haf/data"
   echo "HAF_SHM_DIRECTORY=/srv/haf/shm"
+  echo "HAF_COMMAND=--shared-file-size=1G --plugin database_api --replay --stop-replay-at-block=5000000"
 } > .env.local
 
 # Create an override file that makes the haf-nettwork attachable
@@ -177,7 +173,7 @@ networks:
 EOF
 
 # Verify you configuration
-docker compose \
+docker compose --project-name balance-tracker \
   --env-file .env.local \
   --file docker-compose.yml \
   --file docker-compose.override.yml \
@@ -188,8 +184,8 @@ docker compose \
 mkdir -p /srv/haf/data
 mkdir /srv/haf/shm
 
-# Start the application
-docker compose \
+# Start the application with custom project name
+docker compose --project-name balance-tracker \
   --env-file .env.local \
   --file docker-compose.yml \
   --file docker-compose.override.yml \
