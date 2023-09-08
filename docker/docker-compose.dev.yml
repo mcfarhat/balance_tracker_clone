@@ -4,6 +4,9 @@ services:
       PG_ACCESS: "
         host    all    all    all    trust\n
         "
+    volumes:
+      - ./haf/postgresql_conf.d:/home/hived/datadir/haf_postgresql_conf.d:ro
+      - ./haf/postgresql_logs:/home/hived/datadir/postgresql_logs
     networks:
       haf-network:
         ipv4_address: 172.19.0.2

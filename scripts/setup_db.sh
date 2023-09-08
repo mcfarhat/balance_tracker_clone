@@ -2,6 +2,24 @@
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 || exit 1; pwd -P )"
 
+print_help () {
+    cat <<EOF
+Usage: $0 [OPTION[=VALUE]]...
+
+Script for setting up the balance tracker database
+OPTIONS:
+    --postgres-host=HOSTNAME              PostgreSQL hostname (default: localhost)
+    --postgres-port=PORT                  PostgreSQL port (default: 5432)
+    --postgres-user=USERNAME              PostgreSQL user name (default: haf_admin)
+    --postgres-url=URL                    PostgreSQL URL (if set, overrides three previous options, empty by default)
+    --no-context=true|false               When set to true, do not create context (default: false)
+    --no-context                          The same as '--no-context=true'
+    --skip-if-db-exists=true|false        When set to true, skip database setup if database already exists (default: false)
+    --skip-if-db-exists                   The same as '--skip-if-db-exists=true'
+    --help,-h,-?                          Displays this help message
+EOF
+}
+
 POSTGRES_USER=${POSTGRES_USER:-"haf_admin"}
 POSTGRES_HOST=${POSTGRES_HOST:-"localhost"}
 POSTGRES_PORT=${POSTGRES_PORT:-5432}
@@ -27,6 +45,10 @@ while [ $# -gt 0 ]; do
         ;;
     --skip-if-db-exists)
         SKIP_IF_DB_EXISTS="true"
+        ;;
+    --help|-h|-?)
+        print_help
+        exit 0
         ;;
     -*)
         echo "ERROR: '$1' is not a valid option"

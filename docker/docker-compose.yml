@@ -15,15 +15,17 @@ services:
         host    postgres         haf_admin        all    trust\n
         host    haf_block_log    pghero           all    trust\n
         host    postgres         pghero           all    trust\n
+        host    haf_block_log    btracker_owner   all    trust\n
         "
     volumes:
       - haf_datadir:/home/hived/datadir
       - haf_shmdir:/home/hived/shm_dir
       - ./blockchain:/home/hived/datadir/blockchain
+      - ./scripts/haf-healthcheck.sh:/home/hived/healthcheck.sh
     networks:
       haf-network:
     healthcheck:
-      test: ["CMD-SHELL","curl -f localhost:8091"]
+      test: ["CMD-SHELL","/home/hived/healthcheck.sh"]
       interval: 60s
       timeout: 10s
       retries: 3
@@ -38,6 +40,8 @@ services:
     volumes:
       - ../api:/app/api
       - ../db:/app/db
+      - ../endpoints:/app/endpoints
+      - ../dump_accounts:/app/dump_accounts
       - ../scripts:/app/scripts
       - ../balance-tracker.sh:/app/balance-tracker.sh
     networks:
@@ -53,7 +57,7 @@ services:
     environment:
       BLOCK_NUMBER: 0
       POSTGRES_HOST: haf
-      POSTGRES_USER: haf_app_admin
+      POSTGRES_USER: btracker_owner
     volumes:
       - ../balance-tracker.sh:/app/balance-tracker.sh 
       - ./scripts/block-processing-healthcheck.sh:/app/healthcheck.sh

@@ -1,5 +1,7 @@
 #!/usr/bin/bash
+
 set -e
+
 # Setup a trap to kill potentially pending healthcheck SQL query at script exit
 trap 'trap - SIGINT SIGTERM && kill -- -$$' SIGINT SIGTERM
 
