@@ -21,7 +21,7 @@ variables:
 include:
   - template: Workflows/Branch-Pipelines.gitlab-ci.yml
   - project: hive/haf
-    ref: c8785f44cc37cb54e164f776fcbaecf6e5f7cfe7 # develop
+    ref: ce733449e24cd01666047da6d77a7d3e287589cd # develop
     file: /scripts/ci-helpers/prepare_data_image_job.yml
 
 .lint_job:
@@ -173,14 +173,11 @@ test:
       cp /blockchain/block_log_5m/block_log docker/blockchain/block_log
       chmod a+w docker/blockchain/block_log
 
-      pushd haf
-      HAF_COMMIT=$(git rev-parse HEAD)
-      popd
       pushd docker
       # Put all the variables that can be predefined in the "variables"
       # block and all the variables that have to be dynamically set by the script below
       {
-        echo "HAF_VERSION=instance-$HAF_COMMIT"
+        echo "HAF_VERSION=instance-$HAF_IMAGE_NAME_COMMIT"
         echo "HIVED_UID=$HIVED_UID"
       } > .env.local
       cat .env.local
