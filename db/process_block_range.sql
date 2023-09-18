@@ -67,7 +67,7 @@ LOOP
   END IF;
 END LOOP;
 
-RAISE NOTICE 'Processing delegations, rewards, savings, withdraws!!!!!!!!!!!!!!!!!!!';
+RAISE NOTICE 'Processing delegations, rewards, savings, withdraws.';
 
 FOR ___balance_change IN
   SELECT 
@@ -190,8 +190,8 @@ LOOP
   END CASE;
 
 END LOOP;
-RAISE NOTICE 'updated last processed block!!!!!!!!!!!!!!!!!!!';
 PERFORM btracker_app.storeLastProcessedBlock(_to);
+RAISE NOTICE 'Updated last processed block.';
 END
 $$;
 
