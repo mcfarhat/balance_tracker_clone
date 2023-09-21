@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#! /bin/sh
 
 set -e
 
@@ -55,7 +55,7 @@ cat <<-END
     --test-report-dir=PATH                Directory where HTML test report will be generated
     --test-result-path=PATH               File where JTL test result will be generated
     --test-thread-count=NUMBER            Number of threads to be used to run tests (default: 8)
-    --test-loop-count=NUMBER              Number of loops to be run during tests (default: 60) 
+    --test-loop-count=NUMBER              Number of loops to be run during tests (default: 60)
     --backend-port=PORT                   Port used by the backend (default: 3000)
     --backend-host=HOSTNAME               Hostname of backend's host (default: localhost)
 
@@ -67,14 +67,14 @@ cat <<-END
     --postgres-user=USERNAME              PostgreSQL user name (default: haf_app_admin)
     --postgres-url=URL                    PostgreSQL URL (if set, overrides three previous options, empty by default)
     --postgrest-host=HOST                 PostgREST bind address (default: !4)
-                                          See https://postgrest.org/en/stable/references/configuration.html#server-host for 
+                                          See https://postgrest.org/en/stable/references/configuration.html#server-host for
                                           possible values
     --postgrest-port=PORT                 PostgREST bind port (default: 3000)
     --postgrest-admin-server-port=PORT    PostgREST admin port (default: unset, health checks not available)
                                           See https://postgrest.org/en/stable/references/admin.html#health-check for details
     --test-server-port=PORT               Port on which the test report is served
-    --test-report-dir=PATH                Directory where HTML test report is located             
-      
+    --test-report-dir=PATH                Directory where HTML test report is located
+
 END
 }
 
@@ -100,7 +100,7 @@ build() {
   esac
 }
 
-install-jmeter() {
+install_jmeter() {
   version="5.6.2"
   bin_path="/usr/local/bin/jmeter"
   src_path="/usr/local/src/jmeter-$version"
@@ -120,14 +120,14 @@ cat <<-_jmeter | sudo tee "$jmeter"
 cd "$src_path/bin"
 ./jmeter.sh "\$@"
 _jmeter
-  
+
   sudo chmod +x "$jmeter"
   sudo ln -sf "$jmeter" "$bin_path"
 
   echo "Finished installing Jmeter"
 }
 
-install-postgrest() {
+install_postgrest() {
   version="v11.1.0"
   path="/usr/local/bin/postgrest"
   echo "Installing PostgREST $version to $path..."
@@ -137,12 +137,12 @@ install-postgrest() {
   tar -xJf postgrest.tar.xz
 
   sudo mv postgrest "$path"
-  
+
   rm postgrest.tar.xz
   echo "Finished installing PostgrREST"
 }
 
-install-backend-runtime-dependencies() {
+install_backend_runtime_dependencies() {
   echo "Installing backend runtime dependencies..."
   sudo apt-get update
   sudo apt-get -y install \
@@ -154,7 +154,7 @@ install-backend-runtime-dependencies() {
   echo "Finished installing backend runtime dependencies"
 }
 
-install-frontend-runtime-dependencies() {
+install_frontend_runtime_dependencies() {
   echo "Installing frontend runtime dependencies..."
   sudo apt-get update
   sudo apt-get -y install curl
@@ -167,7 +167,7 @@ install-frontend-runtime-dependencies() {
   echo "Finished installing frontend runtime dependencies"
 }
 
-install-test-dependencies() {
+install_test_dependencies() {
   echo "Installing test dependencies..."
   sudo apt-get update
   sudo apt-get -y install \
@@ -183,19 +183,19 @@ install() {
 
   case "$subcommand" in
     jmeter)
-      install-jmeter
+      install_jmeter
       ;;
     postgrest)
-      install-postgrest
+      install_postgrest
       ;;
     backend-runtime-dependencies)
-      install-backend-runtime-dependencies
+      install_backend_runtime_dependencies
       ;;
     frontend-runtime-dependencies)
-      install-frontend-runtime-dependencies
+      install_frontend_runtime_dependencies
       ;;
     test-dependencies)
-      install-test-dependencies
+      install_test_dependencies
       ;;
     *)
       echo "Unknown subcommand: $subcommand"
@@ -204,7 +204,7 @@ install() {
   esac
 }
 
-process-blocks() {
+process_blocks() {
   echo "Running indexer..."
   echo "Arguments: $*"
 
@@ -249,15 +249,15 @@ process-blocks() {
     shift
   done
 
-  if [[ -z "$block_number" ]]; then
-    block_number=$((10**9))
-      
+  if [ -z "$block_number" ]; then
+    block_number=1000000000
+
     echo 'Running indexer for existing blocks and expecting new blocks...'
   fi
 
   postgres_access=${postgres_url:-"postgresql://$postgres_user@$postgres_host:$postgres_port/haf_block_log"}
 
-  if [[ -z "$log_dir" ]]; then
+  if [ -z "$log_dir" ]; then
     echo "Running indexer in the foreground"
     psql -a -v "ON_ERROR_STOP=1" "$postgres_access" -c "call btracker_app.main('btracker_app', $block_number);"
     echo "Finished running indexer"
@@ -268,7 +268,7 @@ process-blocks() {
   fi
 }
 
-run-tests() {
+run_tests() {
   test_scenario_path="$(pwd)/tests/performance/test_scenarios.jmx"
   test_result_path=${TEST_RESULT_PATH:-"$(pwd)/tests/performance/result.jtl"}
   test_report_dir=${TEST_REPORT_DIR:-"$(pwd)/tests/performance/result_report"}
@@ -324,7 +324,7 @@ run-tests() {
     --jmeterproperty summary.report.path="$test_summary_report_path"
 }
 
-start-frontend() {
+start_frontend() {
   echo "Starting frontend..."
   echo "Arguments: $*"
 
@@ -353,9 +353,9 @@ start-frontend() {
     shift
   done
 
-  [[ -n "$frontend_port" ]] && export PORT="$frontend_port"
+  [ -n "$frontend_port" ] && export PORT="$frontend_port"
 
-  if [[ -z "$log_dir" ]]; then
+  if [ -z "$log_dir" ]; then
     echo "Running frontend in the foreground"
     cd gui
     npm run start
@@ -370,7 +370,7 @@ start-frontend() {
   fi
 }
 
-start-postgrest() {
+start_postgrest() {
   echo "Starting PostgREST..."
   echo "Arguments: $*"
 
@@ -423,12 +423,12 @@ start-postgrest() {
     shift
   done
 
-  export PGRST_DB_URI=${postgres_url:-"postgresql://$postgres_user@$postgres_host:$postgres_port/haf_block_log"}
+  export PGRST_DB_URI="${postgres_url:-postgresql://$postgres_user@$postgres_host:$postgres_port/haf_block_log}"
   export PGRST_SERVER_HOST
   export PGRST_SERVER_PORT
   export PGRST_ADMIN_SERVER_PORT
 
-  if [[ -z "$log_dir" ]]; then
+  if [ -z "$log_dir" ]; then
     echo "Running PostgREST in the foreground"
     postgrest postgrest.conf
     echo "Finished running PostgREST"
@@ -439,7 +439,7 @@ start-postgrest() {
   fi
 }
 
-serve-test-results() {
+serve_test_results() {
   echo "Starting test result server..."
   echo "Arguments: $*"
 
@@ -480,13 +480,13 @@ serve() {
 
   case "$subcommand" in
     frontend)
-      start-frontend "$@"
+      start_frontend "$@"
       ;;
     postgrest-backend)
-      start-postgrest "$@"
+      start_postgrest "$@"
       ;;
     test-results)
-      serve-test-results "$@"
+      serve_test_results "$@"
       ;;
     *)
       echo "Unknown subcommand: $subcommand"
@@ -497,7 +497,7 @@ serve() {
   echo "Done"
 }
 
-set-up-database() {
+set_up_database() {
   echo "Setting up the database..."
   echo "Arguments: $*"
   ./scripts/setup_db.sh "$@"
@@ -515,16 +515,16 @@ case "$command" in
     install "$@"
     ;;
   process-blocks)
-    process-blocks "$@"
+    process_blocks "$@"
     ;;
   run-tests)
-    run-tests "$@"
+    run_tests "$@"
     ;;
   serve)
     serve "$@"
     ;;
   set-up-database)
-    set-up-database "$@"
+    set_up_database "$@"
     ;;
   help | --help | -?)
     print_help

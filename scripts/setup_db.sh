@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 || exit 1; pwd -P )"
 
@@ -66,10 +66,10 @@ done
 
 POSTGRES_ACCESS=${POSTGRES_URL:-"postgresql://$POSTGRES_USER@$POSTGRES_HOST:$POSTGRES_PORT/haf_block_log"}
 
-if [[ "$SKIP_IF_DB_EXISTS" == "true" ]]; then
+if [ "$SKIP_IF_DB_EXISTS" = "true" ]; then
     psql "$POSTGRES_ACCESS" -c "SELECT 'btracker_app.main'::regproc"
     DB_EXISTS=$?
-    [[ "$DB_EXISTS" == "0" ]] && echo "Database already exists, exiting..." && exit 0
+    [ "$DB_EXISTS" = "0" ] && echo "Database already exists, exiting..." && exit 0
 fi
 
 echo "Installing app..."
